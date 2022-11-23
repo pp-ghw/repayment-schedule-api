@@ -24,13 +24,13 @@ class Loan(models.Model):
 class RepaymentSchedules(models.Model):
     """Database model for repayment schedules in the system"""
 
-    loan_id = models.ForeignKey('Loan', on_delete=models.CASCADE,)
+    loan_id = models.ForeignKey('Loan', on_delete=models.CASCADE)
     payment_no = models.PositiveIntegerField()
     payment_amount = models.DecimalField(decimal_places=6, max_digits=21)
     principal = models.DecimalField(decimal_places=6, max_digits=21)
     interest = models.DecimalField(decimal_places=6, max_digits=21)
     balance = models.DecimalField(decimal_places=6, max_digits=21)
-    created_at = models.DateField()
+    created_at = models.DateField(default=date.today())
     updated_at = models.DateField(default=date.today())
     date = models.DateField()
 

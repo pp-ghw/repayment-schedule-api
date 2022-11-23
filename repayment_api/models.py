@@ -14,9 +14,26 @@ class Loan(models.Model):
     loan_term = models.IntegerField(validators=[MaxValueValidator(50), MinValueValidator(1)])
     interest_rate = models.DecimalField(decimal_places=2, max_digits=4, validators=[MaxValueValidator(50), MinValueValidator(1)])
     created_at = models.DateField(validators=[validate_date])
-    updated_at = models.DateField(blank=True)
-
+    updated_at = models.DateField(default=date.today())
 
     def __str__(self):
         """String representation"""
         return {self.loan_amount, self.loan_term, self.interest_rate, self.created_at}
+
+
+class RepaymentSchedules(models.Model):
+    """Database model for repayment schedules in the system"""
+
+    loan_id = models.ForeignKey('Loan', on_delete=models.CASCADE,)
+    payment_no = models.PositiveIntegerField()
+    payment_amount = models.DecimalField(decimal_places=6, max_digits=21)
+    principal = models.DecimalField(decimal_places=6, max_digits=21)
+    interest = models.DecimalField(decimal_places=6, max_digits=21)
+    balance = models.DecimalField(decimal_places=6, max_digits=21)
+    created_at = models.DateField()
+    updated_at = models.DateField(default=date.today())
+    date = models.DateField()
+
+    def __str__(self):
+        """String representation"""
+        return self.loan_id

@@ -1,11 +1,8 @@
-from django.urls import path, include
-# from rest_framework.routers import DefaultRouter
+from django.urls import path
 from repayment_api import views
 
 
-# router = DefaultRouter()
-# router.register('', views.RepaymentViewSet, basename='loans')
-
 urlpatterns = [
     path('', views.RepaymentApiView.as_view()),
+    path('<int:pk>/', views.UpdateLoanApiView.as_view()),
 ]

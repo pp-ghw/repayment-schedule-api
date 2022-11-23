@@ -1,55 +1,78 @@
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from repayment_api.models import Loan
 from repayment_api import serializers
-from rest_framework.decorators import action
 from rest_framework.views import APIView
+from dateutil.relativedelta import relativedelta
 
 
 class RepaymentApiView(APIView):
     """Test API View"""
-    serializer_class = serializers.RepaymentProfileSerializer
+    serializer_class = serializers.LoanSerializer
     queryset = Loan.objects.all()
 
-    def get(self, request, format=None):
+    def roundNumber(self, val):
+        return round(val,2)
+
+    def calculatePaymentSchedule(self, amount, interest, term, date):
+        interest = interest/100
+        paymentAmount = self.roundNumber(( amount * (interest/12) )/ (1 - (1 + interest/12)**(-12 * term)))
+        paymentSchedule = []
+        balance = amount
+        for i in range(term * 12):
+            newInterest =round((interest/12) * balance,2)
+            principal = round((paymentAmount - newInterest),2)
+            balance = round((balance - principal),2)
+            date = date + relativedelta(months=1)
+
+            if balance < 0.1:
+                balance = 0
+            paymentSchedule.append({'payment_no': i+1, 'date': date, 'payment_amount': paymentAmount, 'principal': principal, 'interest': newInterest, 'balance': balance})
+        return paymentSchedule
+
+
+    def get(self, request, pk=None):
         """Returns a list of loans"""
         serializer = self.serializer_class(self.queryset.all(), many=True)
         return Response(serializer.data)
 
-    def post(self, request):
+    def post(self, request, pk=None):
         """Create a loan"""
         serializer = self.serializer_class(data=request.data)
+
         if serializer.is_valid():
-            return Response({'loan': serializer.data})
+
+            amount = serializer.validated_data.get('loan_amount')
+            interest = serializer.validated_data.get('interest_rate')
+            term = serializer.validated_data.get('loan_term')
+            date = serializer.validated_data.get('created_at')
+            paymentSchedules = self.calculatePaymentSchedule(amount, interest, term, date)
+            serializer.save()
+            return Response({'loan': serializer.data, 'payment schedules': paymentSchedules})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk=None):
-        """Handle updating an object"""
-        # item = self.queryset.all().get(pk=pk)
-        item = Loan.objects.get(pk=pk)
-        data = self.serializer_class(item, data=request.data)
-        return Response({item, data})
-        # if data.is_valid():
-        #     data.save()
-        #     return Response(data.data)
-        # else:
-        #     return Response(status=status.HTTP_404_NOT_FOUND)
-
-    def patch(self, request, pk=None):
-        """Handle a partial update of an object"""
-        return Response({'method': 'PATCH'})
-
-    def delete(self, request, pk=None):
-        """Delete an object"""
-        return Response({'method': 'DELETE'})
-
-class RepaymentViewSet(viewsets.ModelViewSet):
-    """Handle creating and updating profiles"""
-    serializer_class = serializers.RepaymentProfileSerializer
+class UpdateLoanApiView(APIView):
+    serializer_class = serializers.LoanSerializer
     queryset = Loan.objects.all()
 
-    @action(methods=["PATCH"], detail=False, url_path="edit")
-    def update_loans(self, request, *args, **kwargs):
-        super().update(request, *args, **kwargs)
+    def get(self, request, pk=None):
+        """Returns a list of loans"""
+        serializer = self.serializer_class(self.queryset.all(), many=True)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        """Handle updating an object"""
+        data = Loan.objects.get(pk=pk)
+        serializer = self.serializer_class(instance=data, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    def delete(self, request, pk):
+        """Delete an object"""
+        data = Loan.objects.get(pk=pk)
+        data.delete()
+        return Response({'message': f"Deleted loan with ID {pk}"})

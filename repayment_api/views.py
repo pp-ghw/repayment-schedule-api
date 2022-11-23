@@ -30,7 +30,7 @@ class RepaymentApiView(APIView):
 
             schedule = {'loan_id': id,'payment_no': i+1, 'date': date, \
                 'payment_amount': paymentAmount, 'principal': principal, \
-                'interest': newInterest, 'balance': balance, 'updated_at': date.today(), 'date': date.today()}
+                'interest': newInterest, 'balance': balance, 'updated_at': date.today()}
             
             payment_serializer = serializers.SchedulesSerializer(data=schedule)
 

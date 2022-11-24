@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from repayment_api.models import Loan, RepaymentSchedules
+from repayment_api.models import Loan, RepaymentSchedule
 
 
 class LoanSerializer(serializers.ModelSerializer):
@@ -12,5 +12,5 @@ class SchedulesSerializer(serializers.ModelSerializer):
     """Serializes repayment schedule object"""
 
     class Meta:
-        model = RepaymentSchedules
+        model = RepaymentSchedule
         fields = '__all__'

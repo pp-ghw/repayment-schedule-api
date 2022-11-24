@@ -1,13 +1,12 @@
 from rest_framework.response import Response
 from rest_framework import status
-from repayment_api.models import Loan, RepaymentSchedules
+from repayment_api.models import Loan, RepaymentSchedule
 from repayment_api import serializers
 from rest_framework.views import APIView
 from dateutil.relativedelta import relativedelta
 
-
 class RepaymentApiView(APIView):
-    """Test API View"""
+    """Test API View."""
     serializer_class = serializers.LoanSerializer
     queryset = Loan.objects.all()
 
@@ -32,22 +31,19 @@ class RepaymentApiView(APIView):
                 'payment_amount': paymentAmount, 'principal': principal, \
                 'interest': newInterest, 'balance': balance, 'updated_at': date.today()}
             
-            payment_serializer = serializers.SchedulesSerializer(data=schedule)
-
-            if payment_serializer.is_valid():
-                payment_serializer.save()
-
             paymentSchedule.append(schedule)
+
+        RepaymentSchedule.objects.bulk_create(paymentSchedule)
         return paymentSchedule
 
 
     def get(self, request, pk=None):
         """Returns a list of loans"""
         serializer = self.serializer_class(self.queryset.all(), many=True)
-        repayment_serializer = serializers.SchedulesSerializer(RepaymentSchedules.objects.all(), many=True)
+        repayment_serializer = serializers.SchedulesSerializer(RepaymentSchedule.objects.all(), many=True)
         return Response({'loans': serializer.data, 'payment schedules': repayment_serializer.data})
 
-    def post(self, request, pk=None):
+    def post(self, request):
         """Create a loan"""
         serializer = self.serializer_class(data=request.data)
 
@@ -59,6 +55,7 @@ class RepaymentApiView(APIView):
             date = serializer.validated_data.get('created_at')
             serializer.save()
             id = serializer.data.get('id')
+            print(id)
             paymentSchedules = self.calculatePaymentSchedule(amount, interest, term, date, id)
             
             return Response({'loan': serializer.data, 'payment schedules': paymentSchedules})
@@ -68,9 +65,10 @@ class UpdateLoanApiView(APIView):
     serializer_class = serializers.LoanSerializer
     queryset = Loan.objects.all()
 
-    def get(self, request, pk=None):
+    def get(self, request, pk):
         """Returns a list of loans"""
-        serializer = self.serializer_class(self.queryset.all(), many=True)
+        data = self.queryset.all().filter(pk=pk)
+        serializer = self.serializer_class(data, many=True)
         return Response(serializer.data)
 
     def put(self, request, pk):

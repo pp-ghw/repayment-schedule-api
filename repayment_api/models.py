@@ -6,18 +6,22 @@ from django.core.exceptions import ValidationError
 
 class Loan(models.Model):
     """Database model for loans in the system"""
-    def validate_date(value):
-        if value <= date(2017,1,1) or value >= date(2050,12,31):
-            raise ValidationError('Date should be between Jan 2017 - Dec 2050')
+    def validate_month(value):
+        if value<=1 or value>=12:
+            raise ValidationError('Month should be between 1 and 12')
+    
+    def validate_year(value):
+        if value<=2017 or value>=2050:
+            raise ValidationError('Year should be between 2017 and 2050')
     class Meta:
         db_table = 'loan'
 
     loan_amount = models.DecimalField(decimal_places=6, max_digits=21, validators=[MaxValueValidator(100000000), MinValueValidator(1000)])
     loan_term = models.PositiveIntegerField(validators=[MaxValueValidator(50), MinValueValidator(1)])
     interest_rate = models.DecimalField(decimal_places=2, max_digits=4, validators=[MaxValueValidator(50), MinValueValidator(1)])
-    loan_month = models.IntegerField()
-    loan_year = models.IntegerField()
-    created_at = models.DateTimeField(validators=[validate_date], auto_now_add=True)
+    loan_month = models.IntegerField(validators=[validate_month])
+    loan_year = models.IntegerField(validators=[validate_year])
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

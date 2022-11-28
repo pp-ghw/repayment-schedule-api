@@ -27,7 +27,7 @@ class RepaymentApiView(APIView):
                 loan_amount_decimal = Decimal(request.data['loan_amount'])
                 loan_term_int = int(request.data['loan_term'])
                 interest_rate_decimal = Decimal(request.data['interest_rate'])
-                loan_month = request.data['loan_month']
+                loan_month = int(request.data['loan_month'])
                 loan_year = int(request.data['loan_year'])
                 
                 serializer = self.serializer_class(
@@ -76,7 +76,7 @@ class IndividualLoanApiView(APIView):
                 loan_amount_decimal = Decimal(request.data['loan_amount'])
                 loan_term_int = int(request.data['loan_term'])
                 interest_rate_decimal = Decimal(request.data['interest_rate'])
-                loan_month = request.data['loan_month']
+                loan_month = int(request.data['loan_month'])
                 loan_year = int(request.data['loan_year'])
 
                 serializer = self.serializer_class(data = {

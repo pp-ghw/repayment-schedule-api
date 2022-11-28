@@ -3,36 +3,13 @@ from rest_framework import status
 from repayment_api.models import Loan, RepaymentSchedule
 from repayment_api import serializers
 from rest_framework.views import APIView
-from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from datetime import datetime
 from django.db import transaction
 from .helper_functions import calculate_payment_schedule
 
-
-def calculatePaymentSchedule(self, amount, interest, term, month, year, loan):
-    interest_decimal = interest/100
-    pmt = self.roundNumber(( amount * (interest_decimal/12) )/ (1 - (1 + interest_decimal/12)**(-12 * term)))
-    paymentSchedule = []
-    balance = amount
-    for i in range(term * 12):
-        new_interest_decimal =self.roundNumber((interest_decimal/12) * balance)
-        principal = self.roundNumber((pmt - new_interest_decimal))
-        balance = self.roundNumber((balance - principal))
-        start_date = datetime(year, int(month), 1) + relativedelta(months=i)
-
-        if month == term*12:
-            balance = 0
-        
-        schedule = RepaymentSchedule(loan=loan, payment_no=i+1, date=start_date, \
-                    payment_amount=pmt, principal=principal, \
-                    interest=new_interest_decimal, balance=balance)
-        
-        paymentSchedule.append(schedule)
-    return paymentSchedule
-
 class RepaymentApiView(APIView):
-    """View for GET and POST"""
+    """View for GET and POST."""
     serializer_class = serializers.LoanSerializer
     queryset = Loan.objects.all()
 
@@ -43,7 +20,7 @@ class RepaymentApiView(APIView):
         return Response({'loans': serializer.data, 'payment schedules': repayment_serializer.data})
 
     def post(self, request):
-        """Create a loan"""
+        """Create a loan."""
         with transaction.atomic():
             if 'loan_amount' in request.data and 'loan_term' in request.data and 'interest_rate' in request.data and 'loan_month' in request.data and 'loan_year' in request.data: 
 
@@ -82,18 +59,18 @@ class RepaymentApiView(APIView):
 
 
 class IndividualLoanApiView(APIView):
-    """View for retrieve, update and delete"""
+    """View for retrieve, update and delete."""
     serializer_class = serializers.LoanSerializer
     queryset = Loan.objects.all()
 
     def get(self, request, pk):
-        """Returns a list of loans"""
+        """Returns a list of loans."""
         data = self.queryset.all().filter(pk=pk)
         serializer = self.serializer_class(data, many=True)
         return Response(serializer.data)
 
     def put(self, request, pk):
-        """Handle updating an object"""
+        """Handle updating an object."""
         try:
             with transaction.atomic():
                 loan_amount_decimal = Decimal(request.data['loan_amount'])
@@ -135,7 +112,7 @@ class IndividualLoanApiView(APIView):
             return Response(str(err), status=status.HTTP_404_NOT_FOUND)
     
     def delete(self, request, pk):
-        """Delete an object"""
+        """Delete an object."""
         data = Loan.objects.get(pk=pk)
         data.delete()
         return Response({'message': f"Deleted loan with ID {pk}"})

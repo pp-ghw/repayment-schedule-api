@@ -5,9 +5,11 @@ from decimal import Decimal
 
 
 def round_number(val):
+    """Round number to 6 decimal places."""
     return Decimal(val).quantize(Decimal('1.000000'))
 
 def calculate_payment_schedule(amount, interest, term, month, year, loan):
+    """Calculate payment schedule."""
     interest_decimal = interest/100
     pmt = round_number(( amount * (interest_decimal/12) )/ (1 - (1 + interest_decimal/12)**(-12 * term)))
     payment_schedule = []

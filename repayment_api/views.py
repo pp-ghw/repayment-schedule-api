@@ -95,41 +95,42 @@ class IndividualLoanApiView(APIView):
     def put(self, request, pk):
         """Handle updating an object"""
         try:
-            loan_amount_decimal = Decimal(request.data['loan_amount'])
-            loan_term_int = int(request.data['loan_term'])
-            interest_rate_decimal = Decimal(request.data['interest_rate'])
-            loan_month = request.data['loan_month']
-            loan_year = int(request.data['loan_year'])
+            with transaction.atomic():
+                loan_amount_decimal = Decimal(request.data['loan_amount'])
+                loan_term_int = int(request.data['loan_term'])
+                interest_rate_decimal = Decimal(request.data['interest_rate'])
+                loan_month = request.data['loan_month']
+                loan_year = int(request.data['loan_year'])
 
-            serializer = self.serializer_class(data = {
-                    'loan_amount': loan_amount_decimal, 
-                    'loan_term': loan_term_int, 
-                    'interest_rate': interest_rate_decimal, 
-                    'loan_year': loan_year, 
-                    'loan_month': loan_month,
-                    }, partial=True)
+                serializer = self.serializer_class(data = {
+                        'loan_amount': loan_amount_decimal, 
+                        'loan_term': loan_term_int, 
+                        'interest_rate': interest_rate_decimal, 
+                        'loan_year': loan_year, 
+                        'loan_month': loan_month,
+                        }, partial=True)
 
-            if serializer.is_valid():
-                repayment_list = RepaymentSchedule.objects.filter(loan_id__id = pk)
-                repayment_list.delete()
+                if serializer.is_valid():
+                    repayment_list = RepaymentSchedule.objects.filter(loan_id__id = pk)
+                    repayment_list.delete()
 
-                Loan.objects.filter(pk=pk).update(
-                    loan_amount = loan_amount_decimal, 
-                    loan_term = loan_term_int, 
-                    interest_rate = interest_rate_decimal, 
-                    loan_year = loan_year, 
-                    loan_month = loan_month,
-                    updated_at = datetime.now()
-                    )
-                loan_details = Loan.objects.get(id=pk)
-                payment_schedules = calculate_payment_schedule(loan_amount_decimal, interest_rate_decimal, loan_term_int, loan_month, loan_year, loan_details)   
-                RepaymentSchedule.objects.bulk_create(payment_schedules)
-                repayments_serializer = serializers.SchedulesSerializer(payment_schedules , many=True).data
-                loan_serializer =  serializers.LoanSerializer(loan_details).data
+                    Loan.objects.filter(pk=pk).update(
+                        loan_amount = loan_amount_decimal, 
+                        loan_term = loan_term_int, 
+                        interest_rate = interest_rate_decimal, 
+                        loan_year = loan_year, 
+                        loan_month = loan_month,
+                        updated_at = datetime.now()
+                        )
+                    loan_details = Loan.objects.get(id=pk)
+                    payment_schedules = calculate_payment_schedule(loan_amount_decimal, interest_rate_decimal, loan_term_int, loan_month, loan_year, loan_details)   
+                    RepaymentSchedule.objects.bulk_create(payment_schedules)
+                    repayments_serializer = serializers.SchedulesSerializer(payment_schedules , many=True).data
+                    loan_serializer =  serializers.LoanSerializer(loan_details).data
 
-                return Response({'loan': loan_serializer, 'payment schedules': repayments_serializer})
-            else:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+                    return Response({'loan': loan_serializer, 'payment schedules': repayments_serializer})
+                else:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
         except Exception as err:
             return Response(str(err), status=status.HTTP_404_NOT_FOUND)
     

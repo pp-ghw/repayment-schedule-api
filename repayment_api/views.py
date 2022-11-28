@@ -73,8 +73,10 @@ class RepaymentApiView(APIView):
                         ) 
                     new_loan.save()
                     payment_schedules = calculate_payment_schedule(loan_amount_decimal, interest_rate_decimal, loan_term_int, loan_month, loan_year, new_loan)   
-                    RepaymentSchedule.objects.bulk_create(payment_schedules)         
-                    return Response({'loan': serializer.data, 'payment schedules': payment_schedules})
+                    RepaymentSchedule.objects.bulk_create(payment_schedules)
+                    repayments_serializer = serializers.SchedulesSerializer(payment_schedules , many=True).data
+
+                    return Response({'loan': serializer.data, 'payment schedules': repayments_serializer})
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -92,8 +94,7 @@ class IndividualLoanApiView(APIView):
 
     def put(self, request, pk):
         """Handle updating an object"""
-
-        with transaction.atomic:
+        try:
             loan_amount_decimal = Decimal(request.data['loan_amount'])
             loan_term_int = int(request.data['loan_term'])
             interest_rate_decimal = Decimal(request.data['interest_rate'])
@@ -112,7 +113,7 @@ class IndividualLoanApiView(APIView):
                 repayment_list = RepaymentSchedule.objects.filter(loan_id__id = pk)
                 repayment_list.delete()
 
-                Loan.objects.filter(id=pk).update(
+                Loan.objects.filter(pk=pk).update(
                     loan_amount = loan_amount_decimal, 
                     loan_term = loan_term_int, 
                     interest_rate = interest_rate_decimal, 
@@ -123,9 +124,14 @@ class IndividualLoanApiView(APIView):
                 loan_details = Loan.objects.get(id=pk)
                 payment_schedules = calculate_payment_schedule(loan_amount_decimal, interest_rate_decimal, loan_term_int, loan_month, loan_year, loan_details)   
                 RepaymentSchedule.objects.bulk_create(payment_schedules)
-                return Response({'loan': loan_details, 'payment schedules': payment_schedules})
+                repayments_serializer = serializers.SchedulesSerializer(payment_schedules , many=True).data
+                loan_serializer =  serializers.LoanSerializer(loan_details).data
+
+                return Response({'loan': loan_serializer, 'payment schedules': repayments_serializer})
             else:
                 return Response(status=status.HTTP_404_NOT_FOUND)
+        except Exception as err:
+            return Response(str(err), status=status.HTTP_404_NOT_FOUND)
     
     def delete(self, request, pk):
         """Delete an object"""

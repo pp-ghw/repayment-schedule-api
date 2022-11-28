@@ -10,7 +10,6 @@ class LoanSerializer(serializers.ModelSerializer):
 
 class SchedulesSerializer(serializers.ModelSerializer):
     """Serializes repayment schedule object"""
-
     class Meta:
         model = RepaymentSchedule
         fields = '__all__'

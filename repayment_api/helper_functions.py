@@ -20,7 +20,7 @@ def calculate_payment_schedule(amount, interest, term, month, year, loan):
         balance = round_number((balance - principal))
         start_date = datetime(year, int(month), 1) + relativedelta(months=i)
 
-        if month == term*12:
+        if i == term*12:
             balance = 0
         
         schedule = RepaymentSchedule(loan=loan, payment_no=i+1, date=start_date, \

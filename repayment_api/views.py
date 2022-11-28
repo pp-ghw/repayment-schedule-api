@@ -67,7 +67,10 @@ class IndividualLoanApiView(APIView):
         """Returns a list of loans."""
         data = self.queryset.all().filter(pk=pk)
         serializer = self.serializer_class(data, many=True)
-        return Response(serializer.data)
+        repayment_schedule= RepaymentSchedule.objects.filter(loan_id__id = pk)
+        repayments_serializer = serializers.SchedulesSerializer(repayment_schedule, many=True).data
+
+        return Response({'loan': serializer.data, 'payment schedules': repayments_serializer})
 
     def put(self, request, pk):
         """Handle updating an object."""
